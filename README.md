@@ -1,15 +1,12 @@
 # Jewelry Pricing Assistant
 
-A deterministic pricing calculator for jewelry styles, with AI-generated
-plain-English explanations layered on top.
+A deterministic pricing engine for jewelry styles, with AI-generated plain-English explanations layered on top.
 
-Every dollar figure is traceable to an input or a formula. The AI is only
-ever used to *describe* numbers that have already been computed — it
-never sees raw inputs and is never allowed to invent or override a price.
+Every dollar figure is traceable to an input or a formula. The AI is used solely to *describe* numbers that have already been computed — it never sees raw inputs and is never permitted to invent or override a price.
 
 ---
 
-## Setup
+## 🚀 Setup
 
 ```bash
 git clone https://github.com/bocchi277/jewelry-pricing-assistant.git
@@ -18,197 +15,138 @@ python3 -m venv venv && source venv/bin/activate   # Windows: venv\Scripts\activ
 pip install -r requirements.txt
 
 cp .env.example .env
-# then edit .env and paste in a free Gemini API key from
+# Edit .env and paste in a free Gemini API key from:
 # https://aistudio.google.com/app/apikey
-# if you want to use other than gemini api then you need to make a little bit of changes in the codebase.
 ```
 
-The tool runs fine **without** a key too — it just falls back to
-deterministic template text for the explanation/warnings instead of
-Gemini-generated prose (see [AI usage](#-ai-usage) below). A clear warning
-is printed at startup when no API key is detected.
+The tool runs fully without an API key — it falls back to deterministic template text for explanations and warnings instead of Gemini-generated prose. A clear notice is printed at startup when no key is detected.
+
+> To use a provider other than Gemini, you'll need to make a small change in `ai_explainer._call_gemini()` — see [Swapping Models / Providers](#ai-usage) below.
 
 ---
 
-## Usage
+## 📖 Usage
 ```bash
-# Process every row in data/pricing_inputs.csv, write outputs/results.json
+# Process every row in data/pricing_inputs.csv → outputs/results.json
 python3 main.py
 
-# Skip Gemini entirely (useful for CI, offline testing, or no API key)
+# Skip Gemini entirely (CI, offline, or no API key)
 python3 main.py --no-ai
 
-# Process just one style
+# Process a single style
 python3 main.py --style B401400-14WVS
 
-# Point at different input files / output path
+# Point at different input files or a custom output path
 python3 main.py --pricing data/pricing_inputs.csv --metals data/metal_prices.csv --output outputs/results.json
 
-# Override which Gemini model is used for this run only
+# Override the primary Gemini model for this run
 python3 main.py --model gemini-2.5-flash
 
 # Override the fallback model for this run
 python3 main.py --fallback-model gemini-2.0-flash
 ```
 
-Run the test suite:
-
 ```bash
+# Run the test suite
 pytest -v
 ```
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 calculator.py     Deterministic math only — no AI, no I/O, no row-specific logic
 validator.py      Input coercion + deterministic warning detection
 ai_explainer.py   The only file that talks to Gemini; always has a deterministic fallback
 main.py           CLI: loads CSVs, runs everything above, writes JSON
-check_gemini.py   Quick script to test Gemini API connectivity independently
-tests/            pytest — unit tests for calculator.py/validator.py, plus an
-                  end-to-end test against the real provided CSVs
-data/             The two provided CSVs (untouched) + a small error-handling demo CSV
-outputs/          Generated JSON results (the sample outputs below live here)
+check_gemini.py   Standalone script to verify Gemini API connectivity
+tests/            Unit tests for calculator.py / validator.py, plus an end-to-end
+                  test against the real provided CSVs
+data/             The two provided CSVs (untouched) + an error-handling demo CSV
+outputs/          Generated JSON results
 ```
 
 ---
 
-## 📐 Required Calculations
+## Pricing Formulas
 
 ```
-metal_cost        = gold_weight_grams * price_per_gram
-diamond_cost       = diamond_carat * diamond_cost_per_carat        (0 if diamond_carat is 0)
-color_stone_cost   = color_stone_carat * color_stone_cost_per_carat (0 if color_stone_type is blank)
-total_cost         = metal_cost + diamond_cost + color_stone_cost + labor_cost + setting_cost
-wholesale_price    = total_cost * (1 + markup_percent / 100)
-retail_price       = wholesale_price * 2
+metal_cost             = gold_weight_grams × price_per_gram
+diamond_cost           = diamond_carat × diamond_cost_per_carat        (0 if diamond_carat is 0)
+color_stone_cost       = color_stone_carat × color_stone_cost_per_carat (0 if color_stone_type is blank)
+total_cost             = metal_cost + diamond_cost + color_stone_cost + labor_cost + setting_cost
+wholesale_price        = total_cost × (1 + markup_percent / 100)
+retail_price           = wholesale_price × 2
 ```
 
-`14W`/`14Y`/`14R` map to the `14K` metal price, `18W`/`18Y`/`18R` map to
-`18K`, `PT` maps to `PT` — built from `metal_prices.csv`'s comma-separated
-`metal_codes` column, not hard-coded. Metal code matching is
-**case-insensitive and whitespace-tolerant** (e.g. `14w` and ` 14W ` both
-match `14W`).
+`14W` / `14Y` / `14R` resolve to the `14K` price; `18W` / `18Y` / `18R` to `18K`; `PT` to `PT`. Mapping is built from `metal_prices.csv`'s `metal_codes` column — nothing is hard-coded. Metal code matching is case-insensitive and whitespace-tolerant (`14w` and ` 14W ` both match `14W`).
 
-All intermediate math is kept at full float precision; rounding to 2
-decimals happens only once, at output time (`calculator.round2`).
+All intermediate math runs at full float precision. Rounding to two decimal places happens exactly once, at output time via `calculator.round2`.
 
 ### Biggest Cost Driver
 
-The explanation must name the single biggest cost driver among metal,
-diamond, color stone, labor, and setting. This is computed deterministically
-in `calculator.biggest_driver()` (ties broken in that fixed order, so the
-result never depends on float noise), and a human-readable label is built
-in `calculator.driver_label()` — e.g. *"the natural diamond cost"* vs.
-*"the lab-grown diamond cost"* (detected from an `LB`-prefixed style number
-or "lab grown" in the item note — see the spec's own example output, which
-specifically says "natural diamond cost"), or *"the ruby cost"* for a named
-color stone. The AI is told this label as a given fact; it never decides it.
+The explanation names the single largest cost component among metal, diamond, color stone, labor, and setting. This is computed deterministically in `calculator.biggest_driver()` — ties are broken in that fixed order, so the result is never subject to float noise. A human-readable label is then built in `calculator.driver_label()`:
+
+- `"the natural diamond cost"` vs. `"the lab-grown diamond cost"` — detected from an `LB`-prefixed style number or `"lab grown"` in the item note
+- `"the ruby cost"` (or whichever stone is named) for color-stone pieces
+
+The AI receives this label as a given fact. It never decides it.
 
 ---
 
 ## AI Usage
 
-Gemini (`google-genai`, `gemini-3.1-flash-lite` primary, `gemini-2.5-flash`
-fallback) is given **only** the already-computed numbers, the
-already-determined biggest-cost-driver label, and a list of
-already-detected warning facts. Its job is narrowly scoped to two things:
+Gemini (`google-genai`, `gemini-3.1-flash-lite` primary / `gemini-2.5-flash` fallback) is given **only** the already-computed numbers, the already-determined cost-driver label, and the list of already-detected warning facts. Its role is narrowly scoped to two things:
 
-1. Write 1-2 sentences of plain-English `pricing_explanation`, required to
-   name the given driver label and forbidden from stating any number not
-   provided to it.
-2. Rephrase each already-detected warning fact into one clean sentence for
-   `validation_warnings` — it cannot add, remove, or invent warnings; if it
-   returns a different count than what was detected, that output is
-   discarded and the deterministic template is used instead.
+1. Write 1–2 sentences of plain-English `pricing_explanation` — required to name the given driver label, forbidden from stating any dollar amount not provided to it.
+2. Rephrase each already-detected warning into one clean sentence for `validation_warnings` — it cannot add, remove, or invent entries. If the count in the response doesn't match the detected count, the output is discarded and the deterministic template is used instead.
 
-A structured `response_schema` (a Pydantic model) forces Gemini to return
-exactly `{"pricing_explanation": str, "validation_warnings": [str, ...]}`
-rather than hoping it follows free-text formatting instructions.
+A structured `response_schema` (a Pydantic model) forces Gemini to return exactly `{"pricing_explanation": str, "validation_warnings": [str, ...]}` — no prompt-following guesswork.
 
-**Dollar-figure sanity check:** after receiving the AI's response, any
-`$X.XX` patterns in the explanation text are extracted and verified against
-the computed values (within ±$0.01 rounding tolerance). If Gemini stated a
-dollar amount that doesn't match anything it was given, the AI explanation
-is discarded and the deterministic fallback is used instead. This enforces
-the assignment's "do not let the model invent prices" requirement with a
-real runtime check, not just a prompt instruction.
+**Dollar-figure sanity check.** After receiving the AI's response, any `$X.XX` patterns in the explanation are extracted and verified against the computed values (within ±$0.01 tolerance). If Gemini states an amount that doesn't match what it was given, the AI explanation is discarded and the deterministic fallback is used. This is a runtime check, not just a prompt instruction.
 
-**Deterministic fallback:** if no `GEMINI_API_KEY` is set, `--no-ai` is
-passed, the call raises after retries, or the response doesn't parse as
-expected, `ai_explainer.py` silently falls back to a plain f-string
-template for the explanation and to the same warning text the AI would
-have been asked to rephrase. The pipeline never fails because of the AI
-step — it's a best-effort enhancement on top of a tool that already works
-without it.
+**Deterministic fallback.** If no `GEMINI_API_KEY` is set, `--no-ai` is passed, the call raises after retries, or the response fails to parse, `ai_explainer.py` silently falls back to an f-string template for the explanation and to the original warning text. The pipeline never fails because of the AI step.
 
-**Auth-error fast-fail:** if the first Gemini call of a run detects an
-authentication/permission error (401/403/PERMISSION_DENIED/invalid API key),
-AI is disabled for the rest of that run immediately — instead of retrying 3
-times per row and wasting up to 30 failed calls with wall-clock delay.
-Rate-limit errors (429) and other transient errors still retry normally.
+**Auth-error fast-fail.** If the first Gemini call of a run returns a 401/403/`PERMISSION_DENIED`/invalid-key error, AI is disabled for the rest of the run immediately — rather than retrying three times per row and burning up to 30 failed calls with wall-clock delay. Rate-limit (429) and other transient errors still retry normally.
 
-**Dual-model cascade with rate-limit handling:** the primary model
-(`GEMINI_MODEL`, default `gemini-3.1-flash-lite`) is tried first. If it
-fails after retries (rate limit, network error, bad response), the
-fallback model (`GEMINI_FALLBACK_MODEL`, default `gemini-2.5-flash`) is
-tried automatically. If both fail, deterministic templates are used.
-A proactive rate throttler tracks request timestamps per model and sleeps
-*before* sending a request that would exceed the rate cap (e.g. 5 req/min
-for `gemini-2.5-flash`), avoiding 429 errors rather than reacting to them.
+**Dual-model cascade.** The primary model is tried first. On failure (rate limit, network error, bad response), the fallback model is tried automatically. If both fail, deterministic templates are used. A proactive rate throttler tracks request timestamps per model and sleeps *before* sending a request that would exceed the per-model RPM cap — avoiding 429s rather than reacting to them.
 
-**On swapping models/providers:** the model names are read from the
-`GEMINI_MODEL` and `GEMINI_FALLBACK_MODEL` env vars (or the `--model`
-and `--fallback-model` CLI flags), so changing models is a config change,
-not a code change. The Gemini-specific code is isolated entirely
-inside `ai_explainer._call_gemini()` — swapping to a different provider
-(OpenAI, Anthropic, a local model) means rewriting that one function to
-return the same `{"pricing_explanation": ..., "validation_warnings": [...]}`
-shape; `calculator.py`, `validator.py`, and `main.py` never need to change.
+**Swapping models / providers.** Model names are read from `GEMINI_MODEL` and `GEMINI_FALLBACK_MODEL` env vars (or `--model` / `--fallback-model` flags), so changing models is a config change, not a code change. The Gemini-specific code is isolated entirely inside `ai_explainer._call_gemini()`. Swapping to a different provider — OpenAI, Anthropic, a local model — means rewriting that one function to return the same `{"pricing_explanation": ..., "validation_warnings": [...]}` shape. `calculator.py`, `validator.py`, and `main.py` never need to change.
 
 ---
 
-## 🛡️ Error Handling
+## Error Handling
 
-Bad data shouldn't crash a batch job. Invalid inputs are coerced safely and
-attached to the output as `validation_warnings`.
-
-**Edge Cases Handled Automatically:**
+Bad data shouldn't crash a batch job. Invalid inputs are coerced safely and surfaced as `validation_warnings` on the affected row.
 
 | Warning Code | Trigger | Effect |
 |---|---|---|
-| `MISSING_STYLE_NUMBER` | Row has no style_number | Labeled as "(missing style_number)" |
-| `DUPLICATE_STYLE_NUMBER` | Same style_number appears on multiple rows (whitespace-insensitive) | Warning attached |
+| `MISSING_STYLE_NUMBER` | Row has no style number | Labeled as `(missing style_number)` |
+| `DUPLICATE_STYLE_NUMBER` | Same style number on multiple rows (whitespace-insensitive) | Warning attached |
 | `MISSING_METAL_CODE` | No metal code provided | Metal cost → $0 |
 | `UNKNOWN_METAL_CODE` | Metal code not found in `metal_prices.csv` | Metal cost → $0 |
-| `MISSING_GOLD_WEIGHT` | Metal code provided but gold weight is blank | Metal cost → $0 |
-| `ZERO_GOLD_WEIGHT` | Gold weight is explicitly 0 with a valid metal code | Informational — metal cost is $0 (may be intentional for loose-stone items) |
-| `MISSING_DIAMOND_QUALITY` | Diamond carat weight given without a quality grade | Warning only |
-| `MISSING_DIAMOND_COST_PER_CARAT` | Diamond carat weight given without cost per carat | Diamond cost → $0 |
+| `MISSING_GOLD_WEIGHT` | Metal code present but gold weight is blank | Metal cost → $0 |
+| `ZERO_GOLD_WEIGHT` | Gold weight is explicitly 0 with a valid metal code | Informational — may be intentional for loose-stone items |
+| `MISSING_DIAMOND_QUALITY` | Diamond carat given without a quality grade | Warning only |
+| `MISSING_DIAMOND_COST_PER_CARAT` | Diamond carat given without cost per carat | Diamond cost → $0 |
 | `MISSING_COLOR_STONE_COST_PER_CARAT` | Color stone carat given without cost per carat | Color stone cost → $0 |
 | `COLOR_STONE_CARAT_WITHOUT_TYPE` | Color stone carat given but no stone type | Color stone cost → $0 |
 | `COLOR_STONE_TYPE_WITHOUT_CARAT` | Stone type given but carat weight is 0/blank | Color stone cost → $0 |
-| `ZERO_COST_PER_CARAT` | Carat weight > 0 but cost per carat is $0 (looks like a forgotten price) | Informational — cost computes to $0 |
+| `ZERO_COST_PER_CARAT` | Carat > 0 but cost per carat is $0 (likely a forgotten price) | Informational — cost computes to $0 |
 | `NON_NUMERIC_VALUE` | Non-numeric value in a numeric column | Treated as 0 |
 | `NEGATIVE_VALUE_CLAMPED` | Negative value in a numeric column | Clamped to 0 |
-| `MISSING_MARKUP` | markup_percent is blank | Treated as 0% |
-| `NON_FINITE_RESULT` | A computed price field is NaN/Infinity (e.g. from corrupt reference data) | Replaced with $0.00 |
+| `MISSING_MARKUP` | `markup_percent` is blank | Treated as 0% |
+| `NON_FINITE_RESULT` | A computed price is NaN/Infinity (e.g. from corrupt reference data) | Replaced with $0.00 |
 
-At the file level:
-- A missing CSV or a CSV missing a required column exits immediately with a
-  clear one-line message instead of a stack trace.
-- `metal_prices.csv` is validated strictly on load: every row must have a
-  non-blank `metal_group`, non-blank `metal_codes`, and a finite
-  `price_per_gram > 0`. A malformed row exits with a clear error naming the
-  bad row and column.
-- An empty pricing CSV (headers only, no data rows) exits with a clear
-  message instead of silently writing an empty `results.json`.
-- An unwritable output path (e.g. a directory, or a permission error) exits
-  with a clear message instead of an unhandled traceback.
+**File-level checks:**
 
-You can test the error handling with the included demo file:
+- A missing CSV or a CSV missing a required column exits with a single clear error message instead of a stack trace.
+- `metal_prices.csv` is validated on load: every row must have a non-blank `metal_group`, non-blank `metal_codes`, and a finite `price_per_gram > 0`. A malformed row exits with a clear error naming the bad row and column.
+- An empty pricing CSV (headers only, no data rows) exits cleanly rather than writing an empty `results.json`.
+- An unwritable output path exits with a clear message instead of an unhandled traceback.
+
+To exercise all of these at once:
 
 ```bash
 python3 main.py --pricing data/error_handling_demo.csv
@@ -265,17 +203,12 @@ messages, this is normal — the tool is pacing itself to avoid 429 errors.
 
 ---
 
-## Sample Outputs
+## 📊 Sample Outputs
 
-All four samples below were generated with `--no-ai` (no Gemini key is
-present in the sandbox used to build this), so `pricing_explanation` and
-`validation_warnings` come from the deterministic templates, not Gemini.
-With a real `GEMINI_API_KEY` set, every numeric field stays bit-for-bit
-identical — only the wording of those two text fields would come from
-Gemini instead.
+All four samples were generated with `--no-ai`, so `pricing_explanation` and `validation_warnings` come from the deterministic templates. With a real `GEMINI_API_KEY`, every numeric field is bit-for-bit identical — only the wording of those two text fields changes.
 
-**Sample 1 — matches the assignment's own worked example exactly**
-(`python3 main.py --no-ai --style B401400-14WVS`):
+**Sample 1 — matches the worked example exactly**
+(`python3 main.py --no-ai --style B401400-14WVS`)
 
 ```json
 {
@@ -295,7 +228,7 @@ Gemini instead.
 ```
 
 **Sample 2 — lab-grown diamond, labeled correctly**
-(`python3 main.py --no-ai --style LB301900-14RVS1`):
+(`python3 main.py --no-ai --style LB301900-14RVS1`)
 
 ```json
 {
@@ -314,8 +247,8 @@ Gemini instead.
 }
 ```
 
-**Sample 3 — `diamond_carat == 0` business rule, color-stone-only piece**
-(`python3 main.py --no-ai --style B901500-14YS`):
+**Sample 3 — color-stone-only piece**
+(`python3 main.py --no-ai --style B901500-14YS`)
 
 ```json
 {
@@ -335,8 +268,7 @@ Gemini instead.
 ```
 
 **Sample 4 — error-handling demo, every rule firing at once**
-(`python3 main.py --no-ai --pricing data/error_handling_demo.csv`), first
-two rows of seven:
+(`python3 main.py --no-ai --pricing data/error_handling_demo.csv`), first two rows of seven:
 
 ```json
 [
@@ -376,26 +308,22 @@ two rows of seven:
 ]
 ```
 
-Full 7-row output: `outputs/sample_4_error_handling_demo.json`. The
-remaining rows demonstrate a negative weight + non-numeric labor cost
-(both clamped/zeroed with warnings), a color-stone carat given without a
-type, a fully missing `style_number`, and a duplicate `style_number`
-across two rows — none of them crash the batch.
+Full 7-row output: `outputs/sample_4_error_handling_demo.json`. The remaining rows cover a negative weight + non-numeric labor cost (both clamped with warnings), a color-stone carat without a type, a missing `style_number`, and a duplicate `style_number` across two rows. None of them crash the batch.
 
-Full 10-row run of the real provided data: `outputs/results_all_10.json`.
+Full 10-row run of the provided data: `outputs/results_all_10.json`.
 
 ---
 
-## Notes on AI vs. Deterministic Logic
+## 📝 Notes on AI vs. Deterministic Logic
 
 | Concern | Deterministic | AI |
 |---|---|---|
-| All 6 cost/price formulas | ✅ `calculator.py` | — |
-| Metal-code → metal-group mapping | ✅ `calculator.build_metal_lookup` | — |
-| `diamond_carat==0` / blank `color_stone_type` rules | ✅ `calculator.calculate_costs` | — |
-| Which cost bucket is "biggest" | ✅ `calculator.biggest_driver` | — |
-| Natural vs. lab-grown / which color stone, for labeling | ✅ `calculator.driver_label` | — |
-| Whether a warning condition exists at all | ✅ `validator.py` | — |
-| Dollar-figure sanity check on AI output | ✅ `ai_explainer._dollar_figures_valid` | — |
-| Wording of `pricing_explanation` | fallback template | ✅ Gemini (when available) |
-| Wording of each `validation_warnings` sentence | fallback template | ✅ Gemini (when available) |
+| All 6 cost / price formulas | `calculator.py` | — |
+| Metal-code → metal-group mapping | `calculator.build_metal_lookup` | — |
+| `diamond_carat == 0` / blank `color_stone_type` rules | `calculator.calculate_costs` | — |
+| Which cost bucket is largest | `calculator.biggest_driver` | — |
+| Natural vs. lab-grown / named color stone labeling | `calculator.driver_label` | — |
+| Whether a warning condition exists | `validator.py` | — |
+| Dollar-figure sanity check on AI output | `ai_explainer._dollar_figures_valid` | — |
+| Wording of `pricing_explanation` | fallback template | Gemini (when available) |
+| Wording of each `validation_warnings` entry | fallback template | Gemini (when available) |

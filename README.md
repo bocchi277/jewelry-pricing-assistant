@@ -1,4 +1,4 @@
-# 💎 Jewelry Pricing Assistant
+# Jewelry Pricing Assistant
 
 A deterministic pricing calculator for jewelry styles, with AI-generated
 plain-English explanations layered on top.
@@ -9,10 +9,10 @@ never sees raw inputs and is never allowed to invent or override a price.
 
 ---
 
-## 🚀 Setup
+## Setup
 
 ```bash
-git clone <this-repo>
+git clone https://github.com/bocchi277/jewelry-pricing-assistant.git
 cd jewelry-pricing-assistant
 python3 -m venv venv && source venv/bin/activate   # Windows: venv\Scripts\activate
 pip install -r requirements.txt
@@ -30,7 +30,7 @@ is printed at startup when no API key is detected.
 
 ---
 
-## 📖 Usage
+## Usage
 ```bash
 # Process every row in data/pricing_inputs.csv, write outputs/results.json
 python3 main.py
@@ -109,7 +109,7 @@ color stone. The AI is told this label as a given fact; it never decides it.
 
 ---
 
-## 🤖 AI Usage
+## AI Usage
 
 Gemini (`google-genai`, `gemini-3.1-flash-lite` primary, `gemini-2.5-flash`
 fallback) is given **only** the already-computed numbers, the
@@ -265,7 +265,7 @@ messages, this is normal — the tool is pacing itself to avoid 429 errors.
 
 ---
 
-## 📊 Sample Outputs
+## Sample Outputs
 
 All four samples below were generated with `--no-ai` (no Gemini key is
 present in the sandbox used to build this), so `pricing_explanation` and
@@ -386,7 +386,7 @@ Full 10-row run of the real provided data: `outputs/results_all_10.json`.
 
 ---
 
-## 📝 Notes on AI vs. Deterministic Logic
+## Notes on AI vs. Deterministic Logic
 
 | Concern | Deterministic | AI |
 |---|---|---|

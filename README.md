@@ -6,7 +6,7 @@ Every dollar figure is traceable to an input or a formula. The AI is used solely
 
 ---
 
-## 🚀 Setup
+## Installation
 
 ```bash
 git clone https://github.com/bocchi277/jewelry-pricing-assistant.git
@@ -25,7 +25,8 @@ The tool runs fully without an API key — it falls back to deterministic templa
 
 ---
 
-## 📖 Usage
+## Usage
+
 ```bash
 # Process every row in data/pricing_inputs.csv → outputs/results.json
 python3 main.py
@@ -154,56 +155,7 @@ python3 main.py --pricing data/error_handling_demo.csv
 
 ---
 
-## 🔧 Troubleshooting
-
-**"No GEMINI_API_KEY found" warning at startup:**
-Copy `.env.example` to `.env` and add your API key, or set
-`GEMINI_API_KEY` as an environment variable. The tool works fine without
-it — you'll just get deterministic template text instead of Gemini prose.
-
-**Testing Gemini connectivity independently:**
-Run `check_gemini.py` to list available models and verify your API key works
-without involving the pricing pipeline:
-
-```bash
-python3 check_gemini.py
-```
-
-**"API key not valid" / auth errors:**
-The tool detects auth failures on the first Gemini call and disables AI for
-the rest of the run (instead of retrying per-row). Double-check your key at
-[Google AI Studio](https://aistudio.google.com/app/apikey).
-
-**Monitoring free-tier usage:**
-Free-tier Gemini usage appears in Google AI Studio's **Dashboard → Usage**
-page — not in Cloud Billing/cost pages, which may show $0 even when
-requests are succeeding.
-
-**Rate-limit slowdowns:**
-The tool proactively throttles to stay under per-model RPM caps (e.g.
-5 req/min for `gemini-2.5-flash`). If you see "Rate throttle: sleeping…"
-messages, this is normal — the tool is pacing itself to avoid 429 errors.
-
----
-
-## ⚠️ Known Limitations
-
-- **One color stone per item.** The data schema supports a single
-  `color_stone_type` / `color_stone_carat` / `color_stone_cost_per_carat`
-  per row. Items with multiple color stones would need schema changes.
-- **No currency-symbol or percent-sign stripping.** If a numeric field
-  contains `"$475"` or `"220%"` instead of `475` or `220`, it will be
-  treated as a non-numeric value (clamped to 0 with a warning). Clean your
-  CSV inputs to contain plain numbers.
-- **Strict `metal_prices.csv` validation.** The reference data file is
-  validated on load and will refuse to process if any row has a blank
-  `metal_group`, blank `metal_codes`, or a non-positive/non-finite
-  `price_per_gram`. This is intentional — corrupt reference data should fail
-  loudly, not silently produce wrong prices.
-
----
-
-## 📊 Sample Outputs
+## Sample Outputs
 
 All four samples were generated with `--no-ai`, so `pricing_explanation` and `validation_warnings` come from the deterministic templates. With a real `GEMINI_API_KEY`, every numeric field is bit-for-bit identical — only the wording of those two text fields changes.
 
@@ -314,9 +266,42 @@ Full 10-row run of the provided data: `outputs/results_all_10.json`.
 
 ---
 
-## 📝 Notes on AI vs. Deterministic Logic
+## Troubleshooting
 
-| Concern | Deterministic | AI |
+**"No GEMINI_API_KEY found" at startup**
+Copy `.env.example` to `.env` and add your key, or export `GEMINI_API_KEY` as an environment variable. The tool works without it — you'll get deterministic template text instead of Gemini prose.
+
+**Testing Gemini connectivity independently**
+`check_gemini.py` lists available models and verifies your key without involving the pricing pipeline:
+
+```bash
+python3 check_gemini.py
+```
+
+**"API key not valid" / auth errors**
+Auth failures are detected on the first Gemini call of a run, and AI is disabled for all subsequent rows immediately rather than retrying per-row. Verify your key at [Google AI Studio](https://aistudio.google.com/app/apikey).
+
+**Monitoring free-tier usage**
+Free-tier Gemini usage appears under **Dashboard → Usage** in Google AI Studio — not in Cloud Billing, which may show $0 even when requests are succeeding.
+
+**"Rate throttle: sleeping…" messages**
+Normal. The tool proactively paces requests to stay under per-model RPM caps (e.g. 5 req/min for `gemini-2.5-flash`) and sleeps before a request that would breach the limit, rather than reacting to 429s after the fact.
+
+---
+
+## Known Limitations
+
+**One color stone per item.** The schema supports a single `color_stone_type` / `color_stone_carat` / `color_stone_cost_per_carat` per row. Items with multiple color stones would require schema changes.
+
+**No currency-symbol or percent-sign stripping.** A field containing `"$475"` or `"220%"` is treated as non-numeric, clamped to 0, and flagged with a warning. CSV inputs should contain plain numbers.
+
+**Strict `metal_prices.csv` validation.** The reference file is validated on load. Any row with a blank `metal_group`, blank `metal_codes`, or a non-positive / non-finite `price_per_gram` will halt the run with a clear error. This is intentional — corrupt reference data should fail loudly rather than silently produce wrong prices.
+
+---
+
+## AI vs. Deterministic: What Does What
+
+| Responsibility | Deterministic | AI |
 |---|---|---|
 | All 6 cost / price formulas | `calculator.py` | — |
 | Metal-code → metal-group mapping | `calculator.build_metal_lookup` | — |

@@ -1,0 +1,16 @@
+[
+  {
+    "style_number": "B401400-14WVS",
+    "metal_group": "14K",
+    "metal_cost": 201.6,
+    "diamond_cost": 570.0,
+    "color_stone_cost": 0.0,
+    "labor_cost": 95.0,
+    "setting_cost": 40.0,
+    "total_cost": 906.6,
+    "wholesale_price": 2901.12,
+    "retail_price": 5802.24,
+    "pricing_explanation": "The largest cost driver is the natural diamond cost. This 14K piece uses a 220% wholesale markup.",
+    "validation_warnings": []
+  }
+]

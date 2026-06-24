@@ -1,0 +1,16 @@
+[
+  {
+    "style_number": "B901500-14YS",
+    "metal_group": "14K",
+    "metal_cost": 163.8,
+    "diamond_cost": 0.0,
+    "color_stone_cost": 128.25,
+    "labor_cost": 90.0,
+    "setting_cost": 35.0,
+    "total_cost": 417.05,
+    "wholesale_price": 1251.15,
+    "retail_price": 2502.3,
+    "pricing_explanation": "The largest cost driver is the metal cost (14K). This 14K piece uses a 200% wholesale markup.",
+    "validation_warnings": []
+  }
+]

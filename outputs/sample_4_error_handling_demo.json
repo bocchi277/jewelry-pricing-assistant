@@ -1,0 +1,117 @@
+[
+  {
+    "style_number": "DEMO-001",
+    "metal_group": "14K",
+    "metal_cost": 201.6,
+    "diamond_cost": 570.0,
+    "color_stone_cost": 0.0,
+    "labor_cost": 95.0,
+    "setting_cost": 40.0,
+    "total_cost": 906.6,
+    "wholesale_price": 906.6,
+    "retail_price": 1813.2,
+    "pricing_explanation": "The largest cost driver is the natural diamond cost. This 14K piece uses a 0% wholesale markup.",
+    "validation_warnings": [
+      "markup_percent was missing or blank; treated as a 0% markup.",
+      "A diamond carat weight was provided without a diamond quality grade."
+    ]
+  },
+  {
+    "style_number": "DEMO-002",
+    "metal_group": "UNKNOWN",
+    "metal_cost": 0.0,
+    "diamond_cost": 320.0,
+    "color_stone_cost": 0.0,
+    "labor_cost": 80.0,
+    "setting_cost": 30.0,
+    "total_cost": 430.0,
+    "wholesale_price": 1290.0,
+    "retail_price": 2580.0,
+    "pricing_explanation": "The largest cost driver is the natural diamond cost. This UNKNOWN piece uses a 200% wholesale markup.",
+    "validation_warnings": [
+      "Metal code '99X' was not found in metal_prices.csv; metal cost was set to $0.00."
+    ]
+  },
+  {
+    "style_number": "DEMO-003",
+    "metal_group": "18K",
+    "metal_cost": 0.0,
+    "diamond_cost": 0.0,
+    "color_stone_cost": 60.0,
+    "labor_cost": 0.0,
+    "setting_cost": 25.0,
+    "total_cost": 85.0,
+    "wholesale_price": 238.0,
+    "retail_price": 476.0,
+    "pricing_explanation": "The largest cost driver is the topaz cost. This 18K piece uses a 180% wholesale markup.",
+    "validation_warnings": [
+      "Field 'gold_weight_grams' contained a negative value (-3.0) and was clamped to 0.",
+      "Field 'labor_cost' contained a non-numeric value ('abc') and was treated as 0.",
+      "gold_weight_grams is 0 with a valid metal code; metal cost is $0.00. This may be intentional for a loose-stone item."
+    ]
+  },
+  {
+    "style_number": "DEMO-004",
+    "metal_group": "PT",
+    "metal_cost": 228.0,
+    "diamond_cost": 0.0,
+    "color_stone_cost": 0.0,
+    "labor_cost": 70.0,
+    "setting_cost": 20.0,
+    "total_cost": 318.0,
+    "wholesale_price": 795.0,
+    "retail_price": 1590.0,
+    "pricing_explanation": "The largest cost driver is the metal cost (PT). This PT piece uses a 150% wholesale markup.",
+    "validation_warnings": [
+      "A color stone carat weight of 1.5 was provided but no color stone type was specified; color stone cost was set to $0.00 per the business rule."
+    ]
+  },
+  {
+    "style_number": "(missing style_number)",
+    "metal_group": "14K",
+    "metal_cost": 168.0,
+    "diamond_cost": 150.0,
+    "color_stone_cost": 0.0,
+    "labor_cost": 60.0,
+    "setting_cost": 20.0,
+    "total_cost": 398.0,
+    "wholesale_price": 1194.0,
+    "retail_price": 2388.0,
+    "pricing_explanation": "The largest cost driver is the metal cost (14K). This 14K piece uses a 200% wholesale markup.",
+    "validation_warnings": [
+      "This row has no style_number."
+    ]
+  },
+  {
+    "style_number": "DEMO-005",
+    "metal_group": "14K",
+    "metal_cost": 168.0,
+    "diamond_cost": 150.0,
+    "color_stone_cost": 0.0,
+    "labor_cost": 60.0,
+    "setting_cost": 20.0,
+    "total_cost": 398.0,
+    "wholesale_price": 1194.0,
+    "retail_price": 2388.0,
+    "pricing_explanation": "The largest cost driver is the metal cost (14K). This 14K piece uses a 200% wholesale markup.",
+    "validation_warnings": [
+      "style_number 'DEMO-005' appears more than once in the input file."
+    ]
+  },
+  {
+    "style_number": "DEMO-005",
+    "metal_group": "14K",
+    "metal_cost": 168.0,
+    "diamond_cost": 150.0,
+    "color_stone_cost": 0.0,
+    "labor_cost": 60.0,
+    "setting_cost": 20.0,
+    "total_cost": 398.0,
+    "wholesale_price": 1194.0,
+    "retail_price": 2388.0,
+    "pricing_explanation": "The largest cost driver is the metal cost (14K). This 14K piece uses a 200% wholesale markup.",
+    "validation_warnings": [
+      "style_number 'DEMO-005' appears more than once in the input file."
+    ]
+  }
+]

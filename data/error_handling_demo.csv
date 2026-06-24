@@ -1,0 +1,8 @@
+style_number,metal,gold_weight_grams,diamond_carat,diamond_quality,diamond_cost_per_carat,color_stone_type,color_stone_carat,color_stone_cost_per_carat,labor_cost,setting_cost,markup_percent,item_note
+DEMO-001,14W,4.8,1.2,,475,,0,0,95,40,,Diamond carat with no quality grade and markup left blank
+DEMO-002,99X,5.0,0.8,SI,400,,0,0,80,30,200,Metal code that does not exist in metal_prices.csv
+DEMO-003,18Y,-3.0,0,,0,Topaz,1.0,60,abc,25,180,Negative weight and a non-numeric labor_cost
+DEMO-004,PT,6.0,0,,0,,1.5,90,70,20,150,Color stone carat given with no color_stone_type
+,14R,4.0,0.5,SI,300,,0,0,60,20,200,Completely missing style_number
+DEMO-005,14R,4.0,0.5,SI,300,,0,0,60,20,200,Duplicate style number coming up next
+DEMO-005,14R,4.0,0.5,SI,300,,0,0,60,20,200,This is the duplicate of the row above
